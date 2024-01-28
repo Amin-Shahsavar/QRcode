@@ -18,29 +18,36 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, validators=[validate_password])
     password_conf = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'password_conf', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'password',
+                  'password_conf', 'first_name', 'last_name']
 
     def validate(self, attrs):
-        emails = list(map(lambda email: email.replace('.', ''), User.objects.values_list('email', flat=True)))
+        emails = list(map(lambda email: email.replace('.', ''),
+                      User.objects.values_list('email', flat=True)))
         email = str(attrs['email']).replace('.', '')
         username = attrs['username']
 
         if not username.isalnum():
-            raise serializers.ValidationError({"username": "The username should only contain alphanumeric characters."})
-        
+            raise serializers.ValidationError(
+                {"username": "The username should only contain alphanumeric characters."})
+
         if len(username) < 4:
-            raise serializers.ValidationError({"username": "The username should be at last 4 characters long."})
+            raise serializers.ValidationError(
+                {"username": "The username should be at last 4 characters long."})
 
         if email in emails:
-            raise serializers.ValidationError({"email": "user with this Email Address already exists."})
+            raise serializers.ValidationError(
+                {"email": "user with this Email Address already exists."})
 
         if attrs['password'] != attrs['password_conf']:
-            raise serializers.ValidationError({"passowrd": "Passwords Do Not Match."})
+            raise serializers.ValidationError(
+                {"passowrd": "Passwords Do Not Match."})
 
         return attrs
 
@@ -49,7 +56,8 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create(**validated_data)
         user.set_password(validated_data['password'])
         user.save()
-        email_message = EmailHandler(request=self.context['request'], user=user)
+        email_message = EmailHandler(
+            request=self.context['request'], user=user)
         email_message.send_email(email_type='verify_email')
         return user
 
@@ -62,7 +70,7 @@ class VerifyEmailSerializer(serializers.Serializer):
         try:
             uid = force_str(urlsafe_base64_decode(attrs['uid']))
             user = User.objects.get(pk=uid)
-        except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             raise serializers.ValidationError({"uid": "Invalid user"})
 
         token = attrs['token']
@@ -88,12 +96,15 @@ class TokenObtainSerializer(BaseTokenObtainSerializer):
             else:
                 user = User.objects.get(username=username)
         except:
-            raise serializers.ValidationError({"username": "No active account found with the given credentials"})
+            raise serializers.ValidationError(
+                {"username": "No active account found with the given credentials"})
 
-        self.user = authenticate(request=self.context.get('request'), username=user.username, password=password)
+        self.user = authenticate(request=self.context.get(
+            'request'), username=user.username, password=password)
 
         if self.user is None:
-            raise serializers.ValidationError({"password": "No active account found with the given credentials"})
+            raise serializers.ValidationError(
+                {"password": "No active account found with the given credentials"})
 
         return {}
 
@@ -129,9 +140,12 @@ class ChangeFirstNameLastNameSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
-    old_password = serializers.CharField(required=True, style={"input_type": "password"})
-    new_password = serializers.CharField(required=True, style={"input_type": "password"})
-    new_password_conf = serializers.CharField(required=True, style={"input_type": "password"})
+    old_password = serializers.CharField(
+        required=True, style={"input_type": "password"})
+    new_password = serializers.CharField(
+        required=True, style={"input_type": "password"})
+    new_password_conf = serializers.CharField(
+        required=True, style={"input_type": "password"})
 
     class Meta:
         model = User
@@ -144,13 +158,16 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         new_password_conf = attrs['new_password_conf']
 
         if not user.check_password(old_password):
-            raise serializers.ValidationError({"Old password": "Old password incorrect!"})
+            raise serializers.ValidationError(
+                {"Old password": "Old password incorrect!"})
 
         if new_password != new_password_conf:
-            raise serializers.ValidationError({"New passwords": "New passwords not match!"})
+            raise serializers.ValidationError(
+                {"New passwords": "New passwords not match!"})
 
         if old_password == new_password:
-            raise serializers.ValidationError({"New and Old Password": "You cant set your current password."})
+            raise serializers.ValidationError(
+                {"New and Old Password": "You cant set your current password."})
 
         user.set_password(new_password)
         user.save()
@@ -169,8 +186,10 @@ class ResetPasswordCheckEmailSerializer(serializers.ModelSerializer):
 class ResetPasswordSerializer(serializers.ModelSerializer):
     uid = serializers.CharField(required=True)
     token = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, write_only=True, style={"input_type": "password"})
-    new_password_conf = serializers.CharField(required=True, write_only=True, style={"input_type": "password"})
+    new_password = serializers.CharField(
+        required=True, write_only=True, style={"input_type": "password"})
+    new_password_conf = serializers.CharField(
+        required=True, write_only=True, style={"input_type": "password"})
 
     class Meta:
         model = User

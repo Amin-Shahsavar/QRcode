@@ -22,6 +22,7 @@ class UserAdmin(BaseUserAdmin):
                 'first_name',
                 'last_name',
                 'email',
+                'is_verified_email',
             ),
         }),
         (_('Permissions'), {

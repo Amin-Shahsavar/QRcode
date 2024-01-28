@@ -28,6 +28,7 @@ class User(AbstractUser):
             "unique": _("A user with that email address already exists."),
         },
     )
+    is_verified_email = models.BooleanField(_("is verify"), default=False)
     is_active = models.BooleanField(
         _("active"),
         default=False,
